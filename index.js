@@ -12,8 +12,6 @@ const client = new Client({
 
 const BACON_API_URL = 'https://baconbypass.online/bypass';
 
-// ==================== SLASH COMMANDS ====================
-
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
@@ -37,8 +35,6 @@ client.once('ready', async () => {
         console.error('❌ ลงทะเบียน commands ไม่สำเร็จ:', error);
     }
 });
-
-// ==================== BYPASS FUNCTION ====================
 
 async function bypassLink(url) {
     try {
@@ -68,8 +64,6 @@ function isPlatorelayLink(url) {
     ];
     return platorelayPatterns.some(pattern => pattern.test(url));
 }
-
-// ==================== SLASH COMMAND HANDLER ====================
 
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
@@ -131,8 +125,6 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
-// ==================== AUTO DETECT + DELETE IMMEDIATELY ====================
-
 client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
 
@@ -143,32 +135,26 @@ client.on('messageCreate', async (message) => {
     const platorelayUrls = urls.filter(url => isPlatorelayLink(url));
     if (platorelayUrls.length === 0) return;
 
-    // เช็คว่าบอทมีสิทธิ์ลบข้อความหรือไม่
     const botMember = message.guild?.members.me;
     const canDelete = botMember?.permissionsIn(message.channel).has(PermissionsBitField.Flags.ManageMessages);
 
-    // 🗑️ ลบข้อความต้นฉบับทันทีที่ detect ได้
     if (canDelete) {
         try {
             await message.delete();
             console.log(`🗑️ ลบข้อความต้นฉบับของ ${message.author.tag} ทันที`);
         } catch (err) {
             console.error('❌ ไม่สามารถลบข้อความต้นฉบับได้:', err.message);
-            // ถ้าลบไม่ได้ ให้ reply ปกติ
         }
     } else {
         console.log('⚠️ บอทไม่มีสิทธิ์ ManageMessages จึงไม่สามารถลบข้อความต้นฉบับได้');
     }
 
-    // ส่ง embed กำลัง bypass (ใช้ channel.send แทน reply เพราะข้อความต้นฉบับถูกลบแล้ว)
     const processingEmbed = new EmbedBuilder()
         .setColor(0x3498DB)
         .setTitle('🔍 พบ PlatoRelay Link')
         .setDescription(`กำลัง bypass ให้ <@${message.author.id}>... รอสักครู่`)
         .setTimestamp();
 
-    // ถ้าลบข้อความได้ → ใช้ channel.send
-    // ถ้าลบไม่ได้ → ใช้ message.reply
     const replyMsg = canDelete
         ? await message.channel.send({ embeds: [processingEmbed] })
         : await message.reply({ embeds: [processingEmbed] });
@@ -201,8 +187,6 @@ client.on('messageCreate', async (message) => {
 
     await replyMsg.edit({ embeds: [resultEmbed] });
 });
-
-// ==================== ERROR HANDLING ====================
 
 process.on('unhandledRejection', (error) => {
     console.error('Unhandled Rejection:', error);
