@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 // ตั้งค่า
-const REPO_URL = 'https://github.com/YOUR_USERNAME/YOUR_REPO.git'; // แก้เป็นของคุณ
+const REPO_URL = 'https://github.com/hanamijung/Bypass-bot.git'; // แก้เป็นของคุณ
 const BRANCH = 'main';
 const BOT_DIR = __dirname;
 
