@@ -1,4 +1,4 @@
-const { execSync, spawn } = require('child_process');
+const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -24,7 +24,7 @@ async function update() {
             const remoteHash = execSync(`git rev-parse origin/${BRANCH}`, { cwd: BOT_DIR }).toString().trim();
 
             if (localHash === remoteHash) {
-                console.log('✅ โค้ดเป็นเวอร์ชันล่าสุดแล้ว ไม่ต้องอัปเดต');
+                console.log('✅ โค้ดเป็นเวอร์ชันล่าสุดแล้ว');
                 return false;
             }
 
@@ -45,13 +45,13 @@ async function update() {
 
 function restartPM2() {
     console.log('🔄 กำลังรีสตาร์ท PM2...');
-    const child = spawn('pm2', ['reload', PM2_APP_NAME], {
-        detached: true,
-        stdio: 'inherit',
-        shell: true
-    });
-    child.unref();
-    console.log('🚀 สั่งรีสตาร์ท PM2 แล้ว!');
+    try {
+        execSync(`pm2 reload ${PM2_APP_NAME}`, { stdio: 'inherit' });
+        console.log('🚀 รีสตาร์ท PM2 สำเร็จ!');
+    } catch (err) {
+        console.error('❌ รีสตาร์ท PM2 ล้มเหลว:', err.message);
+        console.log('💡 ลองรัน: pm2 start ecosystem.config.js');
+    }
 }
 
 (async () => {

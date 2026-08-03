@@ -16,15 +16,14 @@ pm2 save
 pm2 startup
 ```
 
-### 3. อัปเดตบอท (ดึงโค้ดใหม่ + รีสตาร์ททันที)
+### 3. อัปเดตบอท
 ```bash
 node update.js
 ```
 
-### 4. ตั้ง Auto Update (เช็คทุก 5 นาที)
+### 4. ตั้ง Auto Update
 ```bash
-npm install node-cron
-pm2 start auto-update.js --name auto-updater
+node auto-update.js
 ```
 
 ## 📊 คำสั่ง PM2
@@ -44,9 +43,8 @@ pm2 delete platobypass  # ลบออกจาก pm2
 
 ## ⚡ ฟีเจอร์
 
-- ✅ ป้องกันรันซ้ำ (Singleton Lock)
 - Auto-detect ลิงก์ platorelay
 - ลบข้อความต้นฉบับ **ทันที**
-- แสดงผลลัพธ์ใน **code block**
+- แสดงผลลัพธ์แบบ minimal embed
 - Auto-restart ด้วย PM2
 - Auto-update จาก GitHub + รีสตาร์ททันที
