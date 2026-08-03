@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, SlashCommandBuilder, EmbedBuilder, PermissionsBitField } = require('discord.js');
 const axios = require('axios');
 
 const client = new Client({
@@ -28,10 +28,8 @@ const commands = [
         .setDescription('เช็คสถานะบอท')
 ];
 
-// Register slash commands เมื่อบอทพร้อม
 client.once('ready', async () => {
     console.log(`✅ บอท ${client.user.tag} พร้อมทำงานแล้ว!`);
-
     try {
         await client.application.commands.set(commands);
         console.log('✅ Slash commands ถูกลงทะเบียนเรียบร้อย');
@@ -51,11 +49,7 @@ async function bypassLink(url) {
             headers: { 'Content-Type': 'application/json' },
             timeout: 30000
         });
-
-        return {
-            success: true,
-            data: response.data
-        };
+        return { success: true, data: response.data };
     } catch (error) {
         return {
             success: false,
@@ -80,21 +74,17 @@ function isPlatorelayLink(url) {
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
-    // /ping
     if (interaction.commandName === 'ping') {
         const embed = new EmbedBuilder()
             .setColor(0x00FF00)
             .setTitle('🏓 Pong!')
             .setDescription(`Latency: ${client.ws.ping}ms\nUptime: ${Math.floor(client.uptime / 1000)}s`)
             .setTimestamp();
-
         await interaction.reply({ embeds: [embed] });
     }
 
-    // /bypass
     if (interaction.commandName === 'bypass') {
         await interaction.deferReply();
-
         const url = interaction.options.getString('url');
 
         if (!isPlatorelayLink(url)) {
@@ -103,7 +93,6 @@ client.on('interactionCreate', async (interaction) => {
                 .setTitle('⚠️ คำเตือน')
                 .setDescription('ลิงก์ที่ให้มาอาจไม่ใช่ platorelay link\nบอทจะพยายาม bypass ต่อไป...')
                 .setTimestamp();
-
             await interaction.editReply({ embeds: [warnEmbed] });
             await new Promise(resolve => setTimeout(resolve, 1500));
         }
@@ -122,12 +111,8 @@ client.on('interactionCreate', async (interaction) => {
                 .setFooter({ text: `Requested by ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL() })
                 .setTimestamp();
 
-            if (result.data.message) {
-                successEmbed.addFields({ name: '📋 Message', value: String(result.data.message), inline: false });
-            }
-            if (result.data.time) {
-                successEmbed.addFields({ name: '⏱️ Time', value: `${result.data.time}s`, inline: true });
-            }
+            if (result.data.message) successEmbed.addFields({ name: '📋 Message', value: String(result.data.message), inline: false });
+            if (result.data.time) successEmbed.addFields({ name: '⏱️ Time', value: `${result.data.time}s`, inline: true });
 
             await interaction.editReply({ embeds: [successEmbed] });
         } else {
@@ -141,32 +126,52 @@ client.on('interactionCreate', async (interaction) => {
                 )
                 .setFooter({ text: `Requested by ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL() })
                 .setTimestamp();
-
             await interaction.editReply({ embeds: [errorEmbed] });
         }
     }
 });
 
-// ==================== AUTO DETECT ====================
+// ==================== AUTO DETECT + DELETE IMMEDIATELY ====================
 
 client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
 
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     const urls = message.content.match(urlRegex);
-
     if (!urls) return;
 
     const platorelayUrls = urls.filter(url => isPlatorelayLink(url));
     if (platorelayUrls.length === 0) return;
 
+    // เช็คว่าบอทมีสิทธิ์ลบข้อความหรือไม่
+    const botMember = message.guild?.members.me;
+    const canDelete = botMember?.permissionsIn(message.channel).has(PermissionsBitField.Flags.ManageMessages);
+
+    // 🗑️ ลบข้อความต้นฉบับทันทีที่ detect ได้
+    if (canDelete) {
+        try {
+            await message.delete();
+            console.log(`🗑️ ลบข้อความต้นฉบับของ ${message.author.tag} ทันที`);
+        } catch (err) {
+            console.error('❌ ไม่สามารถลบข้อความต้นฉบับได้:', err.message);
+            // ถ้าลบไม่ได้ ให้ reply ปกติ
+        }
+    } else {
+        console.log('⚠️ บอทไม่มีสิทธิ์ ManageMessages จึงไม่สามารถลบข้อความต้นฉบับได้');
+    }
+
+    // ส่ง embed กำลัง bypass (ใช้ channel.send แทน reply เพราะข้อความต้นฉบับถูกลบแล้ว)
     const processingEmbed = new EmbedBuilder()
         .setColor(0x3498DB)
         .setTitle('🔍 พบ PlatoRelay Link')
-        .setDescription('กำลัง bypass ให้... รอสักครู่')
+        .setDescription(`กำลัง bypass ให้ <@${message.author.id}>... รอสักครู่`)
         .setTimestamp();
 
-    const replyMsg = await message.reply({ embeds: [processingEmbed] });
+    // ถ้าลบข้อความได้ → ใช้ channel.send
+    // ถ้าลบไม่ได้ → ใช้ message.reply
+    const replyMsg = canDelete
+        ? await message.channel.send({ embeds: [processingEmbed] })
+        : await message.reply({ embeds: [processingEmbed] });
 
     const results = [];
     for (const url of platorelayUrls) {
@@ -174,17 +179,19 @@ client.on('messageCreate', async (message) => {
         results.push({ url, ...result });
     }
 
+    const allSuccess = results.every(r => r.success);
+    const successCount = results.filter(r => r.success).length;
+
     const resultEmbed = new EmbedBuilder()
-        .setColor(0x00FF00)
-        .setTitle('✅ Bypass เสร็จสิ้น')
-        .setDescription(`พบ ${platorelayUrls.length} ลิงก์ | สำเร็จ ${results.filter(r => r.success).length} ลิงก์`)
+        .setColor(allSuccess ? 0x00FF00 : 0xFFA500)
+        .setTitle(allSuccess ? '✅ Bypass เสร็จสิ้น' : '⚠️ Bypass เสร็จสิ้น (มีบางส่วนล้มเหลว)')
+        .setDescription(`พบ ${platorelayUrls.length} ลิงก์ | สำเร็จ ${successCount} ลิงก์`)
         .setFooter({ text: `Requested by ${message.author.tag}`, iconURL: message.author.displayAvatarURL() })
         .setTimestamp();
 
     results.forEach((res, index) => {
-        const bypassedUrl = res.success ? (res.data.result || res.data.url || 'สำเร็จแต่ไม่พบลิงก์') : '❌ ล้มเหลว';
+        const bypassedUrl = res.success ? (res.data.result || res.data.url || 'สำเร็จแต่ไม่พบลิงก์') : `❌ ${res.error}`;
         const status = res.success ? '✅' : '❌';
-
         resultEmbed.addFields({
             name: `${status} Link #${index + 1}`,
             value: `**Original:** ${res.url}\n**Result:** ${bypassedUrl}`,
@@ -204,7 +211,5 @@ process.on('unhandledRejection', (error) => {
 client.on('error', (error) => {
     console.error('Discord Client Error:', error);
 });
-
-// ==================== LOGIN ====================
 
 client.login(process.env.DISCORD_TOKEN);
