@@ -1,36 +1,40 @@
 # PlatoRelay Bypass Discord Bot
 
-บอท Discord สำหรับ bypass ลิงก์ PlatoRelay อัตโนมัติ + ลบข้อความต้นฉบับทันที
+บอท Discord สำหรับ bypass ลิงก์ PlatoRelay อัตโนมัติ
 
-## 🚀 วิธี Deploy (เลือกอย่างใดอย่างหนึ่ง)
+## 🚀 วิธีใช้งานบน VPS (PM2)
 
-### วิธีที่ 1: Railway.app (แนะนำ - ฟรี)
-1. Fork repo นี้ไป GitHub ของคุณ
-2. สมัคร [Railway](https://railway.app)
-3. New Project → Deploy from GitHub repo → เลือก repo
-4. ไปที่ Variables → เพิ่ม `DISCORD_TOKEN`, `CLIENT_ID`, `BACON_API_KEY`
-5. Deploy อัตโนมัติทุกครั้งที่ push ขึ้น GitHub!
-
-### วิธีที่ 2: Render.com (ฟรี)
-1. Fork repo นี้ไป GitHub
-2. สมัคร [Render](https://render.com)
-3. New → Blueprint → Connect GitHub repo
-4. ใส่ Environment Variables
-5. Auto-deploy ทุกครั้งที่ push!
-
-### วิธีที่ 3: VPS / เครื่องตัวเอง
+### 1. ติดตั้ง PM2
 ```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
-cd YOUR_REPO
-npm install
-# แก้ไข .env
-npm start
+npm install -g pm2
 ```
 
-**อัปเดตอัตโนมัติบน VPS:**
+### 2. รันบอทครั้งแรก
+```bash
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup
+```
+
+### 3. อัปเดตบอท (ดึงโค้ดใหม่ + รีสตาร์ททันที)
 ```bash
 node update.js
-# หรือตั้ง cron job ให้รันทุกชั่วโมง
+```
+
+### 4. ตั้ง Auto Update (เช็คทุก 5 นาที)
+```bash
+npm install node-cron
+pm2 start auto-update.js --name auto-updater
+```
+
+## 📊 คำสั่ง PM2
+
+```bash
+pm2 status              # ดูสถานะ
+pm2 logs platobypass    # ดู log
+pm2 restart platobypass # รีสตาร์ท
+pm2 stop platobypass    # หยุด
+pm2 delete platobypass  # ลบออกจาก pm2
 ```
 
 ## 📝 คำสั่งบอท
@@ -40,6 +44,9 @@ node update.js
 
 ## ⚡ ฟีเจอร์
 
+- ✅ ป้องกันรันซ้ำ (Singleton Lock)
 - Auto-detect ลิงก์ platorelay
 - ลบข้อความต้นฉบับ **ทันที**
-- Auto-deploy จาก GitHub
+- แสดงผลลัพธ์ใน **code block**
+- Auto-restart ด้วย PM2
+- Auto-update จาก GitHub + รีสตาร์ททันที
