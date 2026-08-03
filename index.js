@@ -224,7 +224,6 @@ client.on('messageCreate', async (message) => {
     const resultEmbed = new EmbedBuilder()
         .setColor(allSuccess ? 0x00FF00 : 0xFFA500)
         .setTitle('✅ Bypass เสร็จสิ้น')
-        .setDescription(`พบ ${platorelayUrls.length} ลิงก์ | สำเร็จ ${successCount} ลิงก์`)
         .setFooter({ text: `Requested by ${message.author.tag}`, iconURL: message.author.displayAvatarURL() })
         .setTimestamp();
 
@@ -232,7 +231,6 @@ client.on('messageCreate', async (message) => {
         const bypassedUrl = res.success ? (res.data.result || res.data.url || 'สำเร็จแต่ไม่พบลิงก์') : res.error;
         const status = res.success ? '✅' : '❌';
         resultEmbed.addFields({
-            name: `${status} Link #${index + 1}`,
             value: `**🔗 Bypassed Result:** \`\`\`${bypassedUrl}\`\`\``,
             inline: false
         });
