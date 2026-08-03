@@ -94,13 +94,13 @@ client.on('interactionCreate', async (interaction) => {
         const result = await bypassLink(url);
 
         if (result.success) {
+            const bypassedUrl = result.data.result || result.data.url || 'ไม่พบลิงก์';
             const successEmbed = new EmbedBuilder()
                 .setColor(0x00FF00)
                 .setTitle('✅ Bypass สำเร็จ!')
-                .setDescription('ลิงก์ต้นทางที่ได้รับ:')
                 .addFields(
                     { name: '🔗 Original URL', value: url, inline: false },
-                    { name: '✨ Bypassed URL', value: result.data.result || result.data.url || 'ไม่พบลิงก์', inline: false }
+                    { name: '✨ Bypassed Result', value: `\`\`\`${bypassedUrl}\`\`\``, inline: false }
                 )
                 .setFooter({ text: `Requested by ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL() })
                 .setTimestamp();
@@ -113,10 +113,9 @@ client.on('interactionCreate', async (interaction) => {
             const errorEmbed = new EmbedBuilder()
                 .setColor(0xFF0000)
                 .setTitle('❌ Bypass ล้มเหลว')
-                .setDescription('ไม่สามารถ bypass ลิงก์นี้ได้')
                 .addFields(
                     { name: '🔗 URL', value: url, inline: false },
-                    { name: '❌ Error', value: result.error, inline: false }
+                    { name: '❌ Error', value: `\`\`\`${result.error}\`\`\``, inline: false }
                 )
                 .setFooter({ text: `Requested by ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL() })
                 .setTimestamp();
@@ -176,11 +175,11 @@ client.on('messageCreate', async (message) => {
         .setTimestamp();
 
     results.forEach((res, index) => {
-        const bypassedUrl = res.success ? (res.data.result || res.data.url || 'สำเร็จแต่ไม่พบลิงก์') : `❌ ${res.error}`;
+        const bypassedUrl = res.success ? (res.data.result || res.data.url || 'สำเร็จแต่ไม่พบลิงก์') : res.error;
         const status = res.success ? '✅' : '❌';
         resultEmbed.addFields({
             name: `${status} Link #${index + 1}`,
-            value: `**Original:** ${res.url}\n**Result:** ${bypassedUrl}`,
+            value: `**🔗 Bypassed Result:** \`\`\`${bypassedUrl}\`\`\``,
             inline: false
         });
     });
