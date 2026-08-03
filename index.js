@@ -166,7 +166,7 @@ client.on('messageCreate', async (message) => {
         });
     });
 
-    resultEmbed.setFooter({ text: 'Made by Bacon Script | Join discord.gg/baconscript' })
+    resultEmbed.setFooter({ text: `Requested by ${message.author.tag}`, iconURL: message.author.displayAvatarURL() })
         .setTimestamp();
 
     await replyMsg.edit({ embeds: [resultEmbed] });
